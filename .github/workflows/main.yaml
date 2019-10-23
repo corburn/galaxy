@@ -1,0 +1,21 @@
+# fail-fast: false is set to see the success/failure of all environments
+on: [push]
+jobs:
+  build-verse:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.5]
+        tox-environment: [py35-first_startup]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install tox
+      - run: tox -e ${{ matrix.tox-environment }}
