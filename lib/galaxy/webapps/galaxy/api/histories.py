@@ -534,6 +534,18 @@ class HistoriesController(BaseAPIController, ExportsHistoryMixin, ImportsHistory
         Return a BioCompute Object for the history.
         """
         history = self.manager.get_accessible(self.decode_id(id), trans.user, current_history=trans.history)
+
+        output_subdomain = []
+        for content in history.contents_iter():
+            output_subdomain.append({
+                'mediatype': content.to_dict()['data_type'],
+                'uri': url_for(
+                    "history_archive_download",
+                    id=id,
+                    jeha_id=trans.security.encode_id(content.id)
+                )
+            })
+
         ret_dict = {
             'bco_id': url_for('export_bco', id=id),  # This is unique only until the history is modified
             'bco_spec_version': 'https://w3id.org/biocompute/1.3.0/',
@@ -555,7 +567,10 @@ class HistoriesController(BaseAPIController, ExportsHistoryMixin, ImportsHistory
             },
             'execution_domain': {},
             'parametric_domain': {},
-            'io_domain': {},
+            'io_domain': {
+                #'input_subdomain': [],
+                'output_subdomain': output_subdomain,
+            },
             'error_domain': {},
         }
         return ret_dict
