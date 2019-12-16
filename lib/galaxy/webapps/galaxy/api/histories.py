@@ -531,7 +531,32 @@ class HistoriesController(BaseAPIController, ExportsHistoryMixin, ImportsHistory
         Return a BioCompute Object for the history.
         """
         history = self.manager.get_accessible(self.decode_id(id), trans.user, current_history=trans.history)
+          # would like advice on how to make this work
+        try: current_user = trans.user.get_information['addresses'][0]['institution']
+        except: current_user = trans.user.to_dict()
 
+        contributor = {
+              # how to add extra feilds to a user and then parse like was tried in L535 above
+            "orcid": "",
+            "affiliation": current_user['email'].split('@')[-1],
+            "contribution": [],
+            "name": current_user['username'],
+            "email": current_user['email']
+        }
+        contributors = [contributor]
+
+        provenance_domain = {
+                'name': history.name,
+                'version': 'TODO',
+                'created': history.create_time.isoformat(),
+                'modified': history.update_time.isoformat(),
+                'contributors': contributors,
+                'license': 'TODO'
+            },
+          #this should be history.annotation (how to access?)
+        try: histDic = trans.history.to_dict().keys()
+        except: histDic = ['fail']
+            
         output_subdomain = []
         for content in history.contents_iter():
             output_subdomain.append({
@@ -544,28 +569,24 @@ class HistoriesController(BaseAPIController, ExportsHistoryMixin, ImportsHistory
             })
 
         ret_dict = {
-            'bco_id': url_for('export_bco', id=id),  # This is unique only until the history is modified
+              # This is unique only until the history is modified
+            'bco_id': url_for('export_bco', id=id),
             'bco_spec_version': 'https://w3id.org/biocompute/1.3.0/',
             'checksum': 'TODO',
-            'provenance_domain': {
-                'name': history.name,
-                'version': '',
-                'created': history.create_time.isoformat(),
-                'modified': history.update_time.isoformat(),
-                'contributors': [],
-                'license': '',
-            },
-            'usability_domain': [],
+            'provenance_domain': provenance_domain,
+            'usability_domain': [histDic],
             'extension_domain': {},
             'description_domain': {
-                'keywords': [],  # history tags
+                  # history tags
+                'keywords': ['history.tags'],
                 'platform': 'Galaxy',
-                'pipeline_steps': [],  # jobs in the history
+                  # jobs in the history. Or workflow. how to access?
+                'pipeline_steps': [],
             },
             'execution_domain': {},
             'parametric_domain': {},
             'io_domain': {
-                # 'input_subdomain': [],
+                'input_subdomain': [],
                 'output_subdomain': output_subdomain,
             },
             'error_domain': {},
